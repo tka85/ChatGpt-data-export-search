@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Search</title>
+    <style>
+        body {
+            font-family: Inter, Arial, Helvetica, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .search-results {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 10px;
+        }
+
+        .search-result-item {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .search-result-item a {
+            text-decoration: none;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .search-result-item a:hover {
+            text-decoration: underline;
+        }
+
+        input[type="text"] {
+            width: 50%;
+            padding: 5px;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        button {
+            padding: 5px;
+            font-size: 1em;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #spinner {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>ChatGPT search</h2>
+    <input type="text" id="searchInput" placeholder="Type to search..." />
+    <button onclick="searchChats()">Search</button>
+    <div id="spinner"><img src="bouncing-circles.svg" height="30"></div>
+    <div class="search-results" id="resultsContainer"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const params = new URLSearchParams(window.location.search);
+            const searchInput = document.getElementById("searchInput");
+            const searchTerm = params.get("q");
+
+            if (searchTerm) {
+                searchInput.value = decodeURIComponent(searchTerm);
+                searchChats();
+            }
+        });
+
+        document.getElementById("searchInput").addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                searchChats();
+            }
+        });
+
+        async function searchChats() {
+            const searchQuery = document.getElementById("searchInput").value.toLowerCase().trim();
+            const resultsContainer = document.getElementById("resultsContainer");
+            const spinner = document.getElementById("spinner");
+
+            resultsContainer.innerHTML = "";
+
+            // ✅ Show spinner only when search is performed
+            if (searchQuery) {
+                spinner.style.display = "block";
+            }
+
+            if (!searchQuery) {
+                spinner.style.display = "none";
+                resultsContainer.innerHTML = "<p>Please enter a search term.</p>";
+                return;
+            }
+
+            // Update URL for bookmarking
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set("q", searchQuery);
+            window.history.pushState({}, "", newUrl);
+
+            try {
+                const chatFiles = await fetchChatFiles();
+                let matches = [];
+
+                for (const file of chatFiles) {
+                    const content = await fetchChatContent(file);
+                    const cleanedContent = removeMarkdown(content).toLowerCase();
+
+                    if (cleanedContent.includes(searchQuery)) {
+                        matches.push(file);
+                    }
+                }
+
+                spinner.style.display = "none";
+
+                if (matches.length > 0) {
+                    resultsContainer.innerHTML = `(${matches.length} match${matches.length === 1 ? '' : 'es'} found)`;
+                    matches.forEach(match => {
+                        const linkDiv = document.createElement("div");
+                        linkDiv.className = "search-result-item";
+                        const link = document.createElement("a");
+                        link.href = `chats/${match}?q=${encodeURIComponent(searchQuery)}`;
+                        link.textContent = match;
+                        link.target = "_blank";
+                        link.className = "result-item";
+                        linkDiv.appendChild(link);
+                        resultsContainer.appendChild(linkDiv);
+                    });
+                } else {
+                    resultsContainer.innerHTML = "<p>No matches found.</p>";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                spinner.style.display = "none";
+                resultsContainer.innerHTML = "<p>Failed to load chat files.</p>";
+            }
+        }
+
+        async function fetchChatFiles() {
+            try {
+                const response = await fetch("chats/index.json");
+                return await response.json();
+            } catch (error) {
+                console.error("Could not fetch file list:", error);
+                return [];
+            }
+        }
+
+        async function fetchChatContent(file) {
+            try {
+                const response = await fetch(`chats/${file}`);
+                return await response.text();
+            } catch (error) {
+                console.error("Could not fetch file content:", file, error);
+                return "";
+            }
+        }
+
+        function removeMarkdown(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, "$1")
+                .replace(/\*(.*?)\*/g, "$1")
+                .replace(/__(.*?)__/g, "$1")
+                .replace(/`(.*?)`/g, "$1")
+                .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+                .replace(/^> (.*)$/gm, "$1")
+                .replace(/^- (.*)$/gm, "$1")
+                .replace(/\n+/g, " ");
+        }
+    </script>
+</body>
+
+</html>
