@@ -6,21 +6,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Search</title>
     <style>
+        :root {
+            --bg-color: #f9f9f9;
+            --text-color: #000;
+            --message-bg-user: #fff3e0;
+            --message-bg-assistant: #e3f2fd;
+            --highlight-pink: pink;
+            --highlight-green: lightgreen;
+        }
+
+        .dark-mode {
+            --bg-color: #1e1e1e;
+            --text-color: #ffffff;
+            --message-bg-user: #3a3a3a;
+            --message-bg-assistant: #2a2a2a;
+            --highlight-pink: #ff79c6;
+            --highlight-green: #50fa7b;
+        }
+
         body {
             font-family: Inter, Arial, Helvetica, sans-serif;
-            margin: 20px;
-            background-color: #f9f9f9;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 10px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        #darkModeToggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            font-size: 14px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #darkModeToggle:hover {
+            background: #0056b3;
         }
 
         .search-results {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            padding-top: 10px;
         }
 
         .search-result-item {
-            padding: 5px;
+            padding: 8px;
             border-bottom: 1px solid #ddd;
         }
 
@@ -28,6 +67,7 @@
             text-decoration: none;
             font-weight: bold;
             color: #007bff;
+            font-size: 1.1em;
         }
 
         .search-result-item a:hover {
@@ -36,17 +76,20 @@
 
         input[type="text"] {
             width: 50%;
-            padding: 5px;
-            font-size: 1.2em;
-            margin-bottom: 5px;
+            padding: 8px;
+            font-size: 1.1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
         }
 
         button {
-            padding: 5px;
+            padding: 8px 12px;
             font-size: 1em;
             background: #007bff;
             color: white;
             border: none;
+            border-radius: 5px;
             cursor: pointer;
         }
 
@@ -61,14 +104,35 @@
 </head>
 
 <body>
-    <h2>ChatGPT search</h2>
     <input type="text" id="searchInput" placeholder="Type to search..." />
     <button onclick="searchChats()">Search</button>
+    <button id="darkModeToggle">🌙 Dark Mode</button>
     <div id="spinner"><img src="bouncing-circles.svg" height="30"></div>
     <div class="search-results" id="resultsContainer"></div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const darkModeToggle = document.getElementById("darkModeToggle");
+            const isDarkMode = localStorage.getItem("dark-mode") === "enabled";
+
+            if (isDarkMode) {
+                document.body.classList.add("dark-mode");
+                darkModeToggle.innerText = "☀️ Light Mode";
+            }
+
+            darkModeToggle.addEventListener("click", function () {
+                document.body.classList.toggle("dark-mode");
+                const darkModeEnabled = document.body.classList.contains("dark-mode");
+
+                if (darkModeEnabled) {
+                    localStorage.setItem("dark-mode", "enabled");
+                    darkModeToggle.innerText = "☀️ Light Mode";
+                } else {
+                    localStorage.setItem("dark-mode", "disabled");
+                    darkModeToggle.innerText = "🌙 Dark Mode";
+                }
+            });
+
             const params = new URLSearchParams(window.location.search);
             const searchInput = document.getElementById("searchInput");
             const searchTerm = params.get("q");

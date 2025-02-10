@@ -133,20 +133,25 @@ conversations.forEach((conv, index) => {
     <meta charset="UTF-8">
     <title>${conv.title}</title>
     <style>
-        body { font-family: Inter, Arial, Helvetica, sans-serif; }
-        h1 { text-align: center; }
-        .highlight-pink { background-color: pink; color: black; font-weight: bold; padding: 2px; }
-        .highlight-green { background-color: lightgreen; }
-        .chat-container { max-width: 800px; margin: auto; padding: 5px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .message { padding: 10px; margin: 5px 0; border-radius: 8px; }
-        .author { font-weight: bold; margin-bottom: 5px; }
-        .content { white-space: pre-wrap; }
-        .user { background: #fff3e0; padding: 10px; border-radius: 8px; }
-        .assistant { background: #e3f2fd; padding: 10px; border-radius: 8px; }
+        :root {    --bg-color: #f9f9f9;    --text-color: #000;    --message-bg-user: #fff3e0;    --message-bg-assistant: #e3f2fd;    --highlight-pink: pink;    --highlight-green: lightgreen; }
+        .dark-mode {    --bg-color: #1e1e1e;    --text-color: #ffffff;    --message-bg-user: #3a3a3a;    --message-bg-assistant: #2a2a2a;    --highlight-pink: #ff79c6;    --highlight-green: #50fa7b; }
+        body {    font-family: Inter, Arial, Helvetica, sans-serif;    background-color: var(--bg-color);    color: var(--text-color);    padding: 5px; }
+        h1 {    text-align: center; }
+        .chat-container {    max-width: 800px;    margin: auto;    padding: 5px;    background: var(--bg-color);    border-radius: 8px;    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .message {    padding: 5px;    margin: 5px 0;    border-radius: 8px; }
+        .author {    font-weight: bold;    margin-bottom: 5px; }
+        .content {    white-space: pre-wrap; }
+        .user {    background: var(--message-bg-user);    padding: 5px;    border-radius: 8px; }
+        .assistant {    background: var(--message-bg-assistant);    padding: 5px;    border-radius: 8px; }
+        #darkModeToggle {    position: fixed;    top: 10px;    right: 10px;    padding: 8px 12px;    font-size: 14px;    background: #007bff;    color: white;    border: none;    border-radius: 5px;    cursor: pointer; }
+        #darkModeToggle:hover {    background: #0056b3; }    
+        .highlight-pink {    background-color: pink;    color: black;    font-weight: bold;    padding: 2px;    border-radius: 3px; }
+        .highlight-green {    background-color: lightgreen;    color: black;    font-weight: bold;    padding: 2px;    border-radius: 3px; }
     </style>
 </head>
 <body>
     <h1>${conv.title}</h1>
+    <button id="darkModeToggle">🌙 Dark Mode</button>
     ${htmlBody}
     <script src="../conversation.js"></script> <!-- Ensures conversation.js is loaded -->
 </body>

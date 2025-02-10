@@ -7,8 +7,28 @@ document.addEventListener("DOMContentLoaded", function () {
     const decodedSearchTerm = decodeURIComponent(searchTerm).trim();
     const regex = new RegExp(decodedSearchTerm.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "gi");
 
-    let matches = [];
     let currentMatch = 0;
+
+    const darkModeToggle = document.getElementById("darkModeToggle");
+    const isDarkMode = localStorage.getItem("dark-mode") === "enabled";
+
+    if (isDarkMode) {
+        document.body.classList.add("dark-mode");
+        darkModeToggle.innerText = "☀️ Light Mode";
+    }
+
+    darkModeToggle.addEventListener("click", function () {
+        document.body.classList.toggle("dark-mode");
+        const darkModeEnabled = document.body.classList.contains("dark-mode");
+
+        if (darkModeEnabled) {
+            localStorage.setItem("dark-mode", "enabled");
+            darkModeToggle.innerText = "☀️ Light Mode";
+        } else {
+            localStorage.setItem("dark-mode", "disabled");
+            darkModeToggle.innerText = "🌙 Dark Mode";
+        }
+    });
 
     function highlightText(node) {
         if (node.nodeType === 3) { // Text node
@@ -63,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const widget = document.createElement("div");
     widget.style.position = "fixed";
-    widget.style.top = "5px";
+    widget.style.top = "55px";
     widget.style.right = "5px";
     widget.style.padding = "5px";
     widget.style.background = "yellow";
@@ -77,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
     widget.style.gap = "5px";
 
     const label = document.createElement("span");
-    label.innerText = `Search: "${decodedSearchTerm}"`;
+    label.innerHTML = `<em>"${decodedSearchTerm}"<em>`;
 
     const prevButton = document.createElement("button");
     prevButton.innerText = "Prev";
