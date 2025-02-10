@@ -10,7 +10,7 @@ Then you get a locally served page that offers a simple text search over all con
 
 ## Requirements
 
-Installed `npm` and a a websrever running 
+Installed `npm`.
 
 ## How to run
 
@@ -23,12 +23,12 @@ npx tsx parse.ts /tmp/CHATGPT/chat.html
 
 This will generate one HTML and one JSON file per conversation under `chats/` . The file name is the title of the conversation.
 
-3. Start a local HTTP server that can serve the project folder's files locall:
+3. Start a local HTTP server that can serve the project folder's files locally:
    
 ```
 python3 -m http.server 8000
 ```
 
-4. Open browser at `http://localhost:8000/search.html`.
+4. Open `http://localhost:8000/search.html`.
 
 You can also load directly a search e.g. `http://localhost:8000/search.html?q=lion+battery` and browser will populate the search field and show the results.
