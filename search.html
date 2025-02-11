@@ -13,6 +13,8 @@
             --message-bg-assistant: #e3f2fd;
             --highlight-pink: pink;
             --highlight-green: lightgreen;
+            --row-color-light: #f8f9fa;
+            --row-color-dark: #e9ecef;
         }
 
         .dark-mode {
@@ -22,6 +24,8 @@
             --message-bg-assistant: #2a2a2a;
             --highlight-pink: #ff79c6;
             --highlight-green: #50fa7b;
+            --row-color-light: #2e2e2e;
+            --row-color-dark: #3a3a3a;
         }
 
         body {
@@ -55,12 +59,17 @@
         .search-results {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 5px;
         }
 
         .search-result-item {
-            padding: 8px;
+            padding: 10px;
             border-bottom: 1px solid #ddd;
+            background-color: var(--row-color-light);
+        }
+
+        .search-result-item:nth-child(even) {
+            background-color: var(--row-color-dark);
         }
 
         .search-result-item a {
@@ -188,13 +197,13 @@
                 spinner.style.display = "none";
 
                 if (matches.length > 0) {
-                    resultsContainer.innerHTML = `(${matches.length} match${matches.length === 1 ? '' : 'es'} found)`;
+                    resultsContainer.innerHTML = `(${matches.length} conversation${matches.length === 1 ? '' : 's'} match)`;
                     matches.forEach(match => {
                         const linkDiv = document.createElement("div");
                         linkDiv.className = "search-result-item";
                         const link = document.createElement("a");
                         link.href = `chats/${match}?q=${encodeURIComponent(searchQuery)}`;
-                        link.textContent = match;
+                        link.textContent = match.replaceAll('_', ' ').replace('.html', '');
                         link.target = "_blank";
                         link.className = "result-item";
                         linkDiv.appendChild(link);
