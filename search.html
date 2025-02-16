@@ -15,17 +15,22 @@
             --highlight-green: lightgreen;
             --row-color-light: #f8f9fa;
             --row-color-dark: #e9ecef;
+            --border-color-light: #ddd;
+            --border-color-dark: #555;
         }
 
         .dark-mode {
             --bg-color: #1e1e1e;
             --text-color: #ffffff;
-            --message-bg-user: #3a3a3a;
+            --message-bg-user: #5a5a5a;
             --message-bg-assistant: #2a2a2a;
             --highlight-pink: #ff79c6;
             --highlight-green: #50fa7b;
             --row-color-light: #2e2e2e;
-            --row-color-dark: #3a3a3a;
+            --row-color-dark: #5a5a5a;
+            --border-color-light: #444;
+            /* Subtle border for dark mode */
+            --border-color-dark: #666;
         }
 
         body {
@@ -66,6 +71,22 @@
             padding: 10px;
             border-bottom: 1px solid #ddd;
             background-color: var(--row-color-light);
+        }
+
+        .search-result-item ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .search-result-item ul li {
+            width: 40%;
+            border: 1px solid var(--border-color-light);
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+
+        .dark-mode .search-result-item ul li {
+            border-color: var(--border-color-dark);
         }
 
         .search-result-item:nth-child(even) {
@@ -109,12 +130,27 @@
         #spinner {
             display: none;
         }
+
+        .search-result-highlight-match {
+            background-color: #50fa7b;
+            font-weight: bold;
+            padding: 2px;
+            border-radius: 3px;
+        }
+
+        .search-date {
+            font-size: 0.9em;
+            color: gray;
+            margin-left: 8px;
+        }
     </style>
 </head>
 
 <body>
     <input type="text" id="searchInput" placeholder="Type to search..." />
     <button onclick="searchChats()">Search</button>
+    <button id="clearButton">Clear</button>
+
     <button id="darkModeToggle">🌙 Dark Mode</button>
     <div id="spinner"><img src="bouncing-circles.svg" height="30"></div>
     <div class="search-results" id="resultsContainer"></div>
@@ -152,6 +188,19 @@
             }
         });
 
+        document.getElementById("clearButton").addEventListener("click", function () {
+            const searchInput = document.getElementById("searchInput");
+            searchInput.value = ""; // Clear the input field
+
+            // Update the URL to remove query parameters
+            const newUrl = window.location.pathname;
+            window.history.pushState({}, "", newUrl);
+
+            // Trigger a search to clear results
+            searchChats();
+        });
+
+
         document.getElementById("searchInput").addEventListener("keypress", function (event) {
             if (event.key === "Enter") {
                 searchChats();
@@ -165,7 +214,6 @@
 
             resultsContainer.innerHTML = "";
 
-            // ✅ Show spinner only when search is performed
             if (searchQuery) {
                 spinner.style.display = "block";
             }
@@ -183,33 +231,74 @@
 
             try {
                 const chatFiles = await fetchChatFiles();
-                let matches = [];
+                let matchCount = 0;
 
                 for (const file of chatFiles) {
-                    const content = await fetchChatContent(file);
-                    const cleanedContent = removeMarkdown(content).toLowerCase();
+                    const jsonFile = file.replace(".html", ".json"); // Load JSON instead of HTML
+                    const conversation = await fetchChatJSON(jsonFile);
 
-                    if (cleanedContent.includes(searchQuery)) {
-                        matches.push(file);
+                    if (!conversation || !conversation.mapping) continue;
+
+                    let fullText = "";
+                    let messages = [];
+
+                    for (const messageId in conversation.mapping) {
+                        const messageData = conversation.mapping[messageId]?.message;
+                        if (!messageData || !messageData.content?.parts) continue;
+
+                        const textContent = removeMarkdown(messageData.content.parts.join(" ").trim());
+                        if (textContent) {
+                            messages.push(textContent);
+                            fullText += textContent + " ";
+                        }
+                    }
+
+                    if (fullText.toLowerCase().includes(searchQuery)) {
+                        matchCount++;
+
+                        const snippets = extractSnippets(fullText, searchQuery, 100, 200);
+
+                        let createTime = conversation.create_time ? formatTimestamp(conversation.create_time) : "Unknown date";
+
+                        const resultItem = document.createElement("div");
+                        resultItem.className = "search-result-item";
+
+                        const link = document.createElement("a");
+                        link.href = `chats/${file}?q=${encodeURIComponent(searchQuery)}`;
+                        link.textContent = file.replaceAll('_', ' ').replace('.html', '');
+                        link.target = "_blank";
+
+                        const dateSpan = document.createElement("span");
+                        dateSpan.className = "search-date";
+                        dateSpan.textContent = `[${createTime}] `;
+
+
+                        const snippetList = document.createElement("ul");
+                        snippets.forEach(snippet => {
+                            const listItem = document.createElement("li");
+                            listItem.innerHTML = highlightMatch(snippet, searchQuery);
+                            snippetList.appendChild(listItem);
+                        });
+
+                        resultItem.appendChild(document.createTextNode(matchCount + '. '));
+                        resultItem.appendChild(dateSpan);
+                        resultItem.appendChild(link);
+                        resultItem.appendChild(snippetList);
+                        resultsContainer.appendChild(resultItem);
+
+                        const matchCountNode = document.createElement('em');
+                        matchCountNode.textContent = ` (${snippets.length} hit${snippets.length === 1 ? '' : 's'})`;
+                        resultItem.insertBefore(matchCountNode, link.nextSibling);
                     }
                 }
 
+                // Inject match count at the beginning
+                const conversationCountTextNode = document.createTextNode(`(${matchCount} conversation${matchCount === 1 ? '' : 's'})`);
+                resultsContainer.prepend(conversationCountTextNode);
+
                 spinner.style.display = "none";
 
-                if (matches.length > 0) {
-                    resultsContainer.innerHTML = `(${matches.length} conversation${matches.length === 1 ? '' : 's'} match)`;
-                    matches.forEach(match => {
-                        const linkDiv = document.createElement("div");
-                        linkDiv.className = "search-result-item";
-                        const link = document.createElement("a");
-                        link.href = `chats/${match}?q=${encodeURIComponent(searchQuery)}`;
-                        link.textContent = match.replaceAll('_', ' ').replace('.html', '');
-                        link.target = "_blank";
-                        link.className = "result-item";
-                        linkDiv.appendChild(link);
-                        resultsContainer.appendChild(linkDiv);
-                    });
-                } else {
+                if (!matchCount) {
                     resultsContainer.innerHTML = "<p>No matches found.</p>";
                 }
             } catch (error) {
@@ -229,14 +318,67 @@
             }
         }
 
-        async function fetchChatContent(file) {
+        async function fetchChatJSON(jsonFile) {
             try {
-                const response = await fetch(`chats/${file}`);
-                return await response.text();
+                const response = await fetch(`chats/${jsonFile}`);
+                return await response.json();
             } catch (error) {
-                console.error("Could not fetch file content:", file, error);
-                return "";
+                console.error("Could not fetch JSON:", jsonFile, error);
+                return null;
             }
+        }
+
+        function extractSnippets(text, query, buffer = 50, maxLength = 200) {
+            text = cleanText(text); // Remove unwanted characters
+
+            const regex = new RegExp(`.{0,${buffer}}\\b${query}\\b.{0,${buffer}}`, "gi");
+            let matches = text.match(regex) || [];
+
+            return matches.map(snippet => {
+                snippet = snippet.trim();
+                return expandToFullWords(snippet, text, query, maxLength);
+            });
+        }
+
+        function expandToFullWords(snippet, fullText, query, maxLength) {
+            let index = fullText.indexOf(snippet);
+            if (index === -1) return snippet; // Fallback
+
+            let start = index;
+            let end = index + snippet.length;
+
+            // Expand backwards until a space, punctuation, or beginning of text
+            while (start > 0 && /\w/.test(fullText[start - 1]) && (end - start) < maxLength) {
+                start--;
+            }
+
+            // Expand forwards until a space, punctuation, or end of text
+            while (end < fullText.length && /\w/.test(fullText[end]) && (end - start) < maxLength) {
+                end++;
+            }
+
+            let finalSnippet = fullText.substring(start, end).trim();
+            return finalSnippet.length > maxLength ? trimToWordBoundary(finalSnippet, maxLength) : finalSnippet;
+        }
+
+        function trimToWordBoundary(text, maxLength) {
+            if (text.length <= maxLength) return text;
+
+            let trimmed = text.substring(0, maxLength);
+            let lastSpace = trimmed.lastIndexOf(" ");
+
+            return lastSpace > -1 ? trimmed.substring(0, lastSpace) + "…" : trimmed + "…";
+        }
+
+        function cleanText(text) {
+            // Remove non-printable characters (e.g., ``, ``, control chars)
+            return text.replace(/[\u0000-\u001F\u007F-\u009F\uE000-\uF8FF]/g, "").trim();
+        }
+
+
+
+        function highlightMatch(text, query) {
+            return text.replace(new RegExp(`(${query})`, "gi"), `<span class="search-result-highlight-match">$1</span>`);
         }
 
         function removeMarkdown(text) {
@@ -249,6 +391,11 @@
                 .replace(/^> (.*)$/gm, "$1")
                 .replace(/^- (.*)$/gm, "$1")
                 .replace(/\n+/g, " ");
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp * 1000); // Convert Unix timestamp to milliseconds
+            return date.toISOString().split("T")[0]; // Extract YYYY-MM-DD
         }
     </script>
 </body>

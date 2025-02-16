@@ -134,7 +134,7 @@ conversations.forEach((conv, index) => {
     <title>${conv.title}</title>
     <style>
         :root {    --bg-color: #f9f9f9;    --text-color: #000;    --message-bg-user: #fff3e0;    --message-bg-assistant: #e3f2fd;    --highlight-pink: pink;    --highlight-green: lightgreen; }
-        .dark-mode {    --bg-color: #1e1e1e;    --text-color: #ffffff;    --message-bg-user: #3a3a3a;    --message-bg-assistant: #2a2a2a;    --highlight-pink: #ff79c6;    --highlight-green: #50fa7b; }
+        .dark-mode {    --bg-color: #1e1e1e;    --text-color: #ffffff;    --message-bg-user: #5a5a5a;    --message-bg-assistant: #2a2a2a;    --highlight-pink: #ff79c6;    --highlight-green: #50fa7b; }
         body {    font-family: Inter, Arial, Helvetica, sans-serif;    background-color: var(--bg-color);    color: var(--text-color);    padding: 5px; }
         h1 {    text-align: center; }
         .chat-container {    max-width: 800px;    margin: auto;    padding: 5px;    background: var(--bg-color);    border-radius: 8px;    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
